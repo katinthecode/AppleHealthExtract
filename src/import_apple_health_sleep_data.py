@@ -25,31 +25,29 @@ sleep_records = root.findall('.//Record[@type=\'HKCategoryTypeIdentifierSleepAna
 # Filter by date range
 filtered_sleep_records = []
 for record in sleep_records:
-    start_date_str = record.get('startDate')
-    if start_date_str:
-        # Parse the date (format: "2018-05-01 22:45:00 -0600")
-        record_date = datetime.strptime(start_date_str.split(' ')[0], '%Y-%m-%d')
-        if start_filter <= record_date <= end_filter:
-            filtered_sleep_records.append(record)
-
+    if record.get('value', '').startswith("HKCategoryValueSleepAnalysisAsleep"):
+        start_date_str = record.get('startDate')
+        if start_date_str:
+            record_date = datetime.strptime(start_date_str.split(' ')[0], '%Y-%m-%d')
+            if start_filter <= record_date <= end_filter:
+                filtered_sleep_records.append(record)
+ 
 # Find all heart rate records
 heart_rate_records = root.findall('.//Record[@type=\'HKQuantityTypeIdentifierHeartRate\']')
 
-# Filter by date range and time (midnight to 10 am)
+# Filter by date range and time (11 pm to 10 am)
 filtered_heart_rate_records = []
 for record in heart_rate_records:
     start_date_str = record.get('startDate')
     if start_date_str:
-        # Parse the date and time (format: "2018-05-01 22:45:00 -0600")
-        date_time_part = start_date_str.split(' ')[0:2]  # Get date and time
-        record_datetime = datetime.strptime(date_time_part[0] + ' ' + date_time_part[1], '%Y-%m-%d %H:%M:%S')
+        record_datetime = datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S %z")
         record_date = record_datetime.date()
         record_time = record_datetime.time()
-        
-        # Check if date is in range and time is between midnight and 10 am
+
         if start_filter.date() <= record_date <= end_filter.date():
-            if record_time.hour < 10:  # 0 to 9 (midnight to 10 am)
-                filtered_heart_rate_records.append(record) 
+            if record_time.hour >= 23 or record_time.hour < 10:
+                filtered_heart_rate_records.append(record)
+
 
 with open(sleep_output_path, 'w') as f:
     for record in filtered_sleep_records:
