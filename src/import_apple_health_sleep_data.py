@@ -1,6 +1,10 @@
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
-import os
+
+# Define date range
+start_filter = datetime(2026, 1, 12)
+end_filter = datetime(2026, 2, 9)
 
 # Get the directory where this script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -9,15 +13,11 @@ project_root = os.path.dirname(script_dir)
 
 # Construct paths relative to project root
 file_path = os.path.join(project_root, 'exported_data', 'export.xml')
-sleep_output_path = os.path.join(project_root, 'imported_data', 'filtered_sleep_records.xml')
-heart_rate_output_path = os.path.join(project_root, 'imported_data', 'filtered_heart_rate_records.xml')
+sleep_output_path = os.path.join(project_root, 'imported_data', f'filtered_sleep_records_{start_filter.date()}_to_{end_filter.date()}.xml')
+heart_rate_output_path = os.path.join(project_root, 'imported_data', f'filtered_heart_rate_records_{start_filter.date()}_to_{end_filter.date()}.xml')
 
 tree = ET.parse(file_path)
 root = tree.getroot()
-
-# Define date range
-start_filter = datetime(2026, 1, 19)
-end_filter = datetime(2026, 2, 9)
 
 # Find all sleep analysis records
 sleep_records = root.findall('.//Record[@type=\'HKCategoryTypeIdentifierSleepAnalysis\']')
@@ -31,7 +31,7 @@ for record in sleep_records:
             record_date = datetime.strptime(start_date_str.split(' ')[0], '%Y-%m-%d')
             if start_filter <= record_date <= end_filter:
                 filtered_sleep_records.append(record)
- 
+
 # Find all heart rate records
 heart_rate_records = root.findall('.//Record[@type=\'HKQuantityTypeIdentifierHeartRate\']')
 
@@ -47,7 +47,6 @@ for record in heart_rate_records:
         if start_filter.date() <= record_date <= end_filter.date():
             if record_time.hour >= 23 or record_time.hour < 10:
                 filtered_heart_rate_records.append(record)
-
 
 with open(sleep_output_path, 'w') as f:
     for record in filtered_sleep_records:
